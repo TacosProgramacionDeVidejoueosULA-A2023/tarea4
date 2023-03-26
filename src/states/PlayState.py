@@ -157,10 +157,10 @@ class PlayState(BaseState):
             pos_x, pos_y = input_data.position
 
             if self.highlighted_tile:
-                self.highlighted_tile.x = (pos_x * \
-                    settings.VIRTUAL_WIDTH // settings.WINDOW_WIDTH - self.board.x) - (settings.TILE_SIZE/2)
-                self.highlighted_tile.y = (pos_y * \
-                    settings.VIRTUAL_HEIGHT // settings.WINDOW_HEIGHT - self.board.y) - (settings.TILE_SIZE/2)
+                self.highlighted_tile.x = (pos_x *
+                                           settings.VIRTUAL_WIDTH // settings.WINDOW_WIDTH - self.board.x) - (settings.TILE_SIZE/2)
+                self.highlighted_tile.y = (pos_y *
+                                           settings.VIRTUAL_HEIGHT // settings.WINDOW_HEIGHT - self.board.y) - (settings.TILE_SIZE/2)
 
         elif input_id == "click" and input_data.released:
             self.highlighted_tile = None
@@ -180,10 +180,24 @@ class PlayState(BaseState):
                 self.active = False
                 tile1 = self.board.tiles[self.highlighted_i1][self.highlighted_j1]
                 tile2 = self.board.tiles[self.highlighted_i2][self.highlighted_j2]
+                tile1.i, tile1.j, tile2.i, tile2.j = (
+                    tile2.i,
+                    tile2.j,
+                    tile1.i,
+                    tile1.j,
+                )
+                if not self.board.calculate_matches_for([tile1, tile2]):
+                    Timer.tween(
+                        0.25,
+                        [
+                            (tile1, {"x": self.highlighted_tile_ogx,
+                             "y": self.highlighted_tile_ogy}),
+                        ],
+                    )
+                    self.active = True
+                    return
 
                 def arrive():
-                    tile1 = self.board.tiles[self.highlighted_i1][self.highlighted_j1]
-                    tile2 = self.board.tiles[self.highlighted_i2][self.highlighted_j2]
                     (
                         self.board.tiles[tile1.i][tile1.j],
                         self.board.tiles[tile2.i][tile2.j],
@@ -191,12 +205,7 @@ class PlayState(BaseState):
                         self.board.tiles[tile2.i][tile2.j],
                         self.board.tiles[tile1.i][tile1.j],
                     )
-                    tile1.i, tile1.j, tile2.i, tile2.j = (
-                        tile2.i,
-                        tile2.j,
-                        tile1.i,
-                        tile1.j,
-                    )
+
                     self.__calculate_matches([tile1, tile2])
 
                 # Swap tiles
@@ -204,12 +213,11 @@ class PlayState(BaseState):
                     0.25,
                     [
                         (tile1, {"x": tile2.x, "y": tile2.y}),
-                        (tile2, {"x": self.highlighted_tile_ogx, "y": self.highlighted_tile_ogy}),
+                        (tile2, {"x": self.highlighted_tile_ogx,
+                         "y": self.highlighted_tile_ogy}),
                     ],
                     on_finish=arrive,
                 )
-
-            self.highlighted_tile = False
 
     def __calculate_matches(self, tiles: List) -> None:
         matches = self.board.calculate_matches_for(tiles)
